@@ -1,0 +1,260 @@
+from collections import defaultdict, Counter
+from copy import copy
+from math import log
+from random import choices
+import re
+import os
+import pickle
+
+from pprint import pprint
+
+# VARIABLES
+
+human_play = False
+
+num_loops = 1  # 10**3
+
+word_len = 5
+max_guesses = 5
+
+word_list = 'Collins Scrabble Words (2019).txt'
+freq_list = 'all.num.o5.txt'
+cache_file = 'cached.pickle'
+
+# PROGRAM
+
+
+def main():
+    wl = WordList()
+
+    if human_play:
+        human_player(wl)
+    else:
+        CompPlay(wl).cp_main()
+
+
+def human_player(wl):
+    while True:
+        first_letter = input('What\'s the first letter?').upper()
+
+        pc = PossCalculator(wl, first_letter)
+
+        while True:
+            pc.print_best(5)
+
+            guess = input('Guess?').upper()
+            if guess == '':
+                guess = first_letter + pc.get_best(1)[0][0]
+                print(f'Guessing: {guess}')
+            elif guess[1:] not in pc.poss:
+                print(guess, 'is not a valid word. Please try again')
+                continue
+
+            match_string = input('Match String?').lower()
+            if not re.search(r'[sox]{'+str(word_len)+'}', match_string):
+                print('invalid match string. Please try again')
+
+            num_poss = pc.calc_matches(guess, match_string)
+
+            if num_poss == 1:
+                print(f'  -={guess}=-')
+                break
+
+            print(f'  {num_poss} words left')
+
+            if num_poss == 0:
+                print('  WTF did you do?')
+                break
+
+
+def str_pos_sub(string, pos, sub):
+    return string[:pos] + sub + string[pos + 1:]
+
+
+class CompPlay:
+    def __init__(self, wl):
+        self.wl = wl
+
+    def cp_main(self):
+        guess_counter = Counter()
+        for _ in range(num_loops):
+            word = self.get_word()[0]
+            print(f'Word is: {word}')
+            pc = PossCalculator(self.wl, word[0])
+
+            guesses = []
+            while True:
+                guess = word[0] + pc.get_best(1)[0][0]
+                if guess in guesses:
+                    pc.poss.discard(guess[1:])
+                    continue
+
+                guesses.append(guess)
+
+                if guess == word:
+                    print(f'  -={word}=-')
+                    print(f'   {len(guesses)} guesses')
+                    guess_counter[len(guesses)] += 1
+                    break
+                elif len(guesses) == max_guesses:
+                    print('  :( too many guesses')
+                    guess_counter['DQ'] += 1
+                    break
+
+                match_string = self.get_match_string(word, guess)
+                num_poss = pc.calc_matches(guess, match_string)
+
+                print(f'    {guess}\t{match_string}\t{num_poss} words left')
+
+                if word[1:] not in pc.poss:
+                    print('  WTF did you do?')
+                    guess_counter['WTF'] += 1
+                    break
+
+        pprint(guess_counter)
+
+    def get_match_string(self, word, guess):
+        match_string = '.' * word_len
+        for pos in range(word_len):
+            if guess[pos] == word[pos]:
+                match_string = str_pos_sub(match_string, pos, 's')
+                word = word.replace(word[pos], '.', 1)
+
+        for pos in range(word_len):
+            if match_string[pos] != '.':
+                continue
+            elif guess[pos] in word[1:]:
+                match_string = str_pos_sub(match_string, pos, 'o')
+                word = word.replace(guess[pos], '.', 1)
+            else:
+                match_string = str_pos_sub(match_string, pos, 'x')
+
+        return match_string
+
+    def get_word(self):
+        return choices(
+            list(self.wl.word_freq.keys()),  # population
+            list(self.wl.word_freq.values()),  # weights
+        )
+
+
+class PossCalculator:
+    def __init__(self, wl, first_letter):
+        self.wl = wl
+        self.first_letter = first_letter
+        self.poss = copy(wl.starts_with(first_letter))
+        print(f' starting letter {first_letter}, {len(self.poss)} words left')
+
+    def calc_matches(self, guess, match_string):
+        guess = guess[1:]
+        match_string = match_string[1:]
+
+        poss_copy = copy(self.poss)
+        for word in poss_copy:
+            if not self.check_valid(guess, match_string, word):
+                self.poss.remove(word)
+
+        return len(self.poss)
+
+    def check_valid(self, guess, match_string, word):
+        pos_dict = {
+            's': [],
+            'o': [],
+            'x': [],
+        }
+
+        for pos, char in enumerate(match_string):
+            pos_dict[char].append(pos)
+
+        for pos in pos_dict['s']:
+            if guess[pos] == word[pos]:
+                word = str_pos_sub(word, pos, '.')
+            else:
+                return False
+
+        for pos in pos_dict['o']:
+            if guess[pos] in word and guess[pos] != word[pos]:
+                word = word.replace(guess[pos], '.', 1)
+            else:
+                return False
+
+        for pos in pos_dict['x']:
+            if guess[pos] in word:
+                return False
+
+        # You have passed the three trials of the match_string. You have proven yourself.
+        return True
+
+    def get_best(self, n):
+        char_score = Counter()
+        for word in self.poss:
+            for char in set(word):
+                char_score[char] += 1
+
+        word_scores = Counter()
+        for word in self.poss:
+            word_set = set(word)
+            for char in word_set:
+                word_scores[word] += char_score[char]
+
+            word_scores[word] *= (len(word_set) + 1)
+
+        avg_word_score = int(sum(word_scores.values()) / len(word_scores))
+
+        for word, score in word_scores.items():
+            word_scores[word] = int(score / avg_word_score * 130)
+            word_scores[word] += self.wl.word_freq[self.first_letter + word]
+
+        return word_scores.most_common(n)
+
+    def print_best(self, n):
+        for word, score in self.get_best(n):
+            print(f'{self.first_letter}{word}\t{score}')
+
+
+class WordList:
+    def __init__(self):
+        if os.path.exists(cache_file):
+            print('Loading cached wordlist!')  # pickle doesn't want to dump the variables, see below
+            # with open(cache_file, 'rb') as f:
+            #     self.word_dict = pickle.load(f)
+            #     self.word_freq = pickle.load(f)
+        else:
+            print('Building wordlist!')
+            self.build_wordlists()
+
+
+    def build_wordlists(self):
+
+        self.word_dict = defaultdict(set)
+        # word_dict is {first_letter: [rest_of_word1, rest_of_word2]}
+
+        with open(word_list) as f:
+            for word in f:
+                if len(word) == word_len+1:
+                    self.word_dict[word[0]].add(word[1:word_len])
+                    # we already know the first letter, so cut off with [1:]
+                    # there's a newline while reading, so cut it off with [:5]
+
+        self.word_freq = defaultdict(lambda: 40)
+
+        with open(freq_list) as f:
+            for line in f:
+                line = line.split()
+                if len(line[1]) == word_len:
+                    word = line[1].upper()
+                    if word[1:] in self.word_dict[word[0]]:
+                        self.word_freq[word] = int(log(int(line[0]), 6) * 40)
+
+        for word in self.word_freq:
+            assert word[1:] in self.word_dict[word[0]]
+
+        # with open(cache_file, 'wb') as f:
+        #     pickle.dump((self.word_dict, self.word_freq), f)
+
+    def starts_with(self, first_letter):
+        return self.word_dict[first_letter]
+
+
+if __name__ == '__main__':
+    main()
