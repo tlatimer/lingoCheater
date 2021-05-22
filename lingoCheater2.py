@@ -26,7 +26,8 @@ def main():
     # TODO: add a mode where human can play vs comp supplied words
     print(
         '1. [H]uman enters guesses and match strings from an external source\n',
-        '2. [C]omputer plays vs itself'
+        '2. [C]omputer plays vs itself',
+        sep=''
     )
     while True:
         i = input('Choice?').lower()
