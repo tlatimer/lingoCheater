@@ -224,7 +224,7 @@ class PossCalculator:
 class WordList:
     def __init__(self):
         if os.path.exists(cache_file):
-            print('Loading cached wordlist!')  # TODO: pickle doesn't want to dump the variables, see below
+            print('Loading cached wordlist!')
             with open(cache_file, 'rb') as f:
                 self.word_dict = pickle.load(f)
                 self.word_freq = pickle.load(f)
@@ -233,7 +233,8 @@ class WordList:
             self.build_wordlists()
 
     def return_40(self):
-        return 40
+        return 40   # pickle was failing when trying to pickle word_freq because of a lambda
+                    # so I made this to be "not a lambda"
 
     def build_wordlists(self):
 
