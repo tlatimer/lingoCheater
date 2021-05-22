@@ -24,9 +24,10 @@ def main():
     wl = WordList()
 
     # TODO: add a mode where human can play vs comp supplied words
-    print("""
-1. [H]uman enters guesses and match strings from an external source
-2. [C]omputer plays vs itself""")
+    print(
+        '1. [H]uman enters guesses and match strings from an external source\n',
+        '2. [C]omputer plays vs itself'
+    )
     while True:
         i = input('Choice?').lower()
 
