@@ -1,12 +1,10 @@
-import re
 import os
 import pickle
-
+import re
 from collections import defaultdict, Counter
 from copy import copy
 from math import log
 from random import choices
-
 
 # VARIABLES
 
@@ -48,6 +46,7 @@ def human_player(wl):
         pc = PossCalculator(wl, first_letter)
 
         while True:
+            print('Best Guesses:')
             pc.print_best(5)
 
             guess = input('Guess?').upper()
@@ -226,9 +225,9 @@ class WordList:
     def __init__(self):
         if os.path.exists(cache_file):
             print('Loading cached wordlist!')  # TODO: pickle doesn't want to dump the variables, see below
-            # with open(cache_file, 'rb') as f:
-            #     self.word_dict = pickle.load(f)
-            #     self.word_freq = pickle.load(f)
+            with open(cache_file, 'rb') as f:
+                self.word_dict = pickle.load(f)
+                self.word_freq = pickle.load(f)
         else:
             print('Building wordlist!')
             self.build_wordlists()
