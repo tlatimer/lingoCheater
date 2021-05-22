@@ -233,6 +233,9 @@ class WordList:
             print('Building wordlist!')
             self.build_wordlists()
 
+    def return_40(self):
+        return 40
+
     def build_wordlists(self):
 
         self.word_dict = defaultdict(set)
@@ -245,7 +248,7 @@ class WordList:
                     # we already know the first letter, so cut off with [1:]
                     # there's a newline while reading, so cut it off with [:5]
 
-        self.word_freq = defaultdict(lambda: 40)
+        self.word_freq = defaultdict(self.return_40)
 
         with open(freq_list) as f:
             for line in f:
@@ -258,8 +261,9 @@ class WordList:
         for word in self.word_freq:
             assert word[1:] in self.word_dict[word[0]]
 
-        # with open(cache_file, 'wb') as f:
-        #     pickle.dump((self.word_dict, self.word_freq), f)
+        with open(cache_file, 'wb') as f:
+            pickle.dump(self.word_dict, f)
+            pickle.dump(self.word_freq, f)
 
     def starts_with(self, first_letter):
         return self.word_dict[first_letter]
