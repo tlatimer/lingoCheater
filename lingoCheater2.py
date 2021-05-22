@@ -1,17 +1,19 @@
-from collections import defaultdict, Counter
-from copy import copy
-from math import log
-from random import choices
 import re
 import os
 import pickle
 
-# VARIABLES
+from collections import defaultdict, Counter
+from copy import copy
+from math import log
+from random import choices
 
-num_loops = 10**4
+
+# VARIABLES
 
 word_len = 5
 max_guesses = 5
+
+num_loops = 10**4
 
 word_list = 'Collins Scrabble Words (2019).txt'
 freq_list = 'all.num.o5.txt'
@@ -96,7 +98,6 @@ class CompPlay:
                     continue
 
                 guesses.append(guess)
-
 
                 if len(guesses) > max_guesses:
                     print('  :( too many guesses')
@@ -231,7 +232,6 @@ class WordList:
         else:
             print('Building wordlist!')
             self.build_wordlists()
-
 
     def build_wordlists(self):
 
