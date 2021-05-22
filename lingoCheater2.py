@@ -6,13 +6,9 @@ import re
 import os
 import pickle
 
-from pprint import pprint
-
 # VARIABLES
 
-human_play = False
-
-num_loops = 1  # 10**3
+num_loops = 10**4
 
 word_len = 5
 max_guesses = 5
@@ -27,10 +23,20 @@ cache_file = 'cached.pickle'
 def main():
     wl = WordList()
 
-    if human_play:
-        human_player(wl)
-    else:
-        CompPlay(wl).cp_main()
+    # TODO: add a mode where human can play vs comp supplied words
+    print("""
+1. [H]uman enters guesses and match strings from an external source
+2. [C]omputer plays vs itself""")
+    while True:
+        i = input('Choice?').lower()
+
+        if i in ['1', 'h']:
+            human_player(wl)
+        elif i in ['2', 'c', '']:
+            CompPlay(wl).cp_main()
+            break
+        else:
+            print('Invalid Choice')
 
 
 def human_player(wl):
@@ -91,14 +97,15 @@ class CompPlay:
 
                 guesses.append(guess)
 
-                if guess == word:
+
+                if len(guesses) > max_guesses:
+                    print('  :( too many guesses')
+                    guess_counter['DQ'] += 1
+                    break
+                elif guess == word:
                     print(f'  -={word}=-')
                     print(f'   {len(guesses)} guesses')
                     guess_counter[len(guesses)] += 1
-                    break
-                elif len(guesses) == max_guesses:
-                    print('  :( too many guesses')
-                    guess_counter['DQ'] += 1
                     break
 
                 match_string = self.get_match_string(word, guess)
@@ -111,7 +118,9 @@ class CompPlay:
                     guess_counter['WTF'] += 1
                     break
 
-        pprint(guess_counter)
+        print('\n')
+        for guesses, count in guess_counter.most_common():
+            print(f'{count:5d} solved in {guesses} guesses')
 
     def get_match_string(self, word, guess):
         match_string = '.' * word_len
@@ -134,7 +143,7 @@ class CompPlay:
     def get_word(self):
         return choices(
             list(self.wl.word_freq.keys()),  # population
-            list(self.wl.word_freq.values()),  # weights
+            list(self.wl.word_freq.values()),  # weights  # TODO: speedup by turning this into a cached cumulative list
         )
 
 
@@ -215,7 +224,7 @@ class PossCalculator:
 class WordList:
     def __init__(self):
         if os.path.exists(cache_file):
-            print('Loading cached wordlist!')  # pickle doesn't want to dump the variables, see below
+            print('Loading cached wordlist!')  # TODO: pickle doesn't want to dump the variables, see below
             # with open(cache_file, 'rb') as f:
             #     self.word_dict = pickle.load(f)
             #     self.word_freq = pickle.load(f)
