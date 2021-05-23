@@ -8,14 +8,14 @@ from random import choices
 
 # VARIABLES
 
-word_len = 5
-max_guesses = 5
+WORD_LEN = 5
+MAX_GUESSES = 5
 
-num_loops = 10**4
+NUM_LOOPS = 10 ** 4
 
-word_list = 'Collins Scrabble Words (2019).txt'
-freq_list = 'all.num.o5.txt'
-cache_file = 'cached.pickle'
+WORD_LIST_FILE = 'Collins Scrabble Words (2019).txt'
+FREQ_LIST_FILE = 'all.num.o5.txt'
+CACHE_FILE = 'cached.pickle'
 
 # PROGRAM
 
@@ -60,7 +60,7 @@ def human_player(wl):
                 continue
 
             match_string = input('Match String?').lower()
-            if not re.search(r'[sox]{'+str(word_len)+'}', match_string):
+            if not re.search(r'[sox]{' + str(WORD_LEN) + '}', match_string):
                 print('invalid match string. Please try again')
 
             num_poss = pc.calc_matches(guess, match_string)
@@ -86,7 +86,7 @@ class CompPlay:
 
     def cp_main(self):
         guess_counter = Counter()
-        for _ in range(num_loops):
+        for _ in range(NUM_LOOPS):
             word = self.get_word()[0]
             print(f'Word is: {word}')
             pc = PossCalculator(self.wl, word[0])
@@ -100,7 +100,7 @@ class CompPlay:
 
                 guesses.append(guess)
 
-                if len(guesses) > max_guesses:
+                if len(guesses) > MAX_GUESSES:
                     print('  :( too many guesses')
                     guess_counter['DQ'] += 1
                     break
@@ -125,13 +125,13 @@ class CompPlay:
             print(f'{count:5d} solved in {guesses} guesses')
 
     def get_match_string(self, word, guess):
-        match_string = '.' * word_len
-        for pos in range(word_len):
+        match_string = '.' * WORD_LEN
+        for pos in range(WORD_LEN):
             if guess[pos] == word[pos]:
                 match_string = str_pos_sub(match_string, pos, 's')
                 word = word.replace(word[pos], '.', 1)
 
-        for pos in range(word_len):
+        for pos in range(WORD_LEN):
             if match_string[pos] != '.':
                 continue
             elif guess[pos] in word[1:]:
@@ -225,9 +225,9 @@ class PossCalculator:
 
 class WordList:
     def __init__(self):
-        if os.path.exists(cache_file):
+        if os.path.exists(CACHE_FILE):
             print('Loading cached wordlist!')
-            with open(cache_file, 'rb') as f:
+            with open(CACHE_FILE, 'rb') as f:
                 self.word_dict = pickle.load(f)
                 self.word_freq = pickle.load(f)
         else:
@@ -243,19 +243,19 @@ class WordList:
         self.word_dict = defaultdict(set)
         # word_dict is {first_letter: [rest_of_word1, rest_of_word2]}
 
-        with open(word_list) as f:
+        with open(WORD_LIST_FILE) as f:
             for word in f:
-                if len(word) == word_len+1:
-                    self.word_dict[word[0]].add(word[1:word_len])
+                if len(word) == WORD_LEN+1:
+                    self.word_dict[word[0]].add(word[1:WORD_LEN])
                     # we already know the first letter, so cut off with [1:]
                     # there's a newline while reading, so cut it off with [:5]
 
         self.word_freq = defaultdict(self.return_40)
 
-        with open(freq_list) as f:
+        with open(FREQ_LIST_FILE) as f:
             for line in f:
                 line = line.split()
-                if len(line[1]) == word_len:
+                if len(line[1]) == WORD_LEN:
                     word = line[1].upper()
                     if word[1:] in self.word_dict[word[0]]:
                         self.word_freq[word] = int(log(int(line[0]), 6) * 40)
@@ -263,7 +263,7 @@ class WordList:
         for word in self.word_freq:
             assert word[1:] in self.word_dict[word[0]]
 
-        with open(cache_file, 'wb') as f:
+        with open(CACHE_FILE, 'wb') as f:
             pickle.dump(self.word_dict, f)
             pickle.dump(self.word_freq, f)
 
