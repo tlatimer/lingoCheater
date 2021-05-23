@@ -4,6 +4,9 @@ from copy import copy
 from pprint import pprint
 
 
+MIN_LEN = 3
+
+
 def main():
     wf = WordFinder()
 
@@ -23,7 +26,7 @@ class WordFinder:
 
                 if word == 'Collins Scrabble Words (2019). 279,496 words. Words only.':
                     continue
-                elif len(word) == 0:
+                elif len(word) < MIN_LEN:
                     continue
 
                 self.all_words.add(word)
