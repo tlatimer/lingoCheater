@@ -1,7 +1,7 @@
 import random
 
 SCRABBLE_WORDS_FILE = 'Collins Scrabble Words (2019).txt'
-COMP_VS_COMP_GAMES = 100
+COMP_VS_COMP_GAMES = 5
 
 
 def main():
@@ -18,9 +18,20 @@ def main_comp_vs_comp():
     while num_games > 0:
         num_games -= 1
 
-        secret_word = random.choices(word_db.all_words)
-
+        secret_word = random.choice(word_db.all_words)
+        print(f'secret is {secret_word}')
         word_comp = WordCompare(word_db.get_initial_words(secret_word[0]))
+        while len(word_comp.poss) > 1:
+            print(f'{len(word_comp.poss)} possible words left')
+
+            guess = random.choice(word_comp.poss)
+            print(f'guessing  {guess}')
+
+            feedback = word_comp.get_feedback(secret_word, guess)
+            print(f'feedback: {feedback}')
+
+            word_comp.apply_feedback(guess, feedback)
+
 
         raise hell  # force to debugger
 
@@ -31,7 +42,21 @@ class WordCompare:
 
     def get_feedback(self, secret_word, guess):
         """The core algorithm of this whole thing"""
-        return 'sxxxx'
+        fb = list('xxxxx')  # feedback
+        secret_word = list(secret_word)
+        guess = list(guess)
+
+        for i, letter in enumerate(secret_word):
+            if letter == guess[i]:
+                fb[i] = 's'
+                guess[i] = '!'
+
+        for i, letter in enumerate(guess):
+            while letter in secret_word:
+                fb[i] = 'o'
+                secret_word.remove(letter)
+
+        return ''.join(fb)
 
     def apply_feedback(self, guess, feedback):
         for poss in self.poss:
@@ -50,7 +75,8 @@ class WordDB:
         self.all_words = self._legal_words()
 
     def get_initial_words(self, first_letter):
-        return set([x for x in self.all_words if x.startswith(first_letter)])
+        assert len(first_letter) == 1
+        return [x for x in self.all_words if x.startswith(first_letter)]
 
     @staticmethod
     def _legal_words(filename=SCRABBLE_WORDS_FILE, letters=5):
@@ -59,7 +85,7 @@ class WordDB:
             for word in f.readlines():
                 if len(word) == letters + 1:  # newline is counted as a character
                     legal_words.add(word[:-1])
-        return legal_words
+        return list(legal_words)  # should have made it a list to begin with
 
 
 if __name__ == '__main__':
