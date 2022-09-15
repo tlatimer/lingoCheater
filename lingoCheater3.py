@@ -13,6 +13,7 @@ def main():
 
 def main_comp_vs_comp():
     word_db = WordDB()
+
     num_games = COMP_VS_COMP_GAMES
     while num_games > 0:
         num_games -= 1
@@ -29,6 +30,7 @@ class WordCompare:
         self.poss = initial_possibilities
 
     def get_feedback(self, secret_word, guess):
+        """The core algorithm of this whole thing"""
         return 'sxxxx'
 
     def apply_feedback(self, guess, feedback):
@@ -39,8 +41,7 @@ class WordCompare:
         assert len(self.poss) > 0  # this was the issue with the old version
 
     def is_possible(self, orig_guess, feedback, new_guess):
-        """The core algorithm of this whole thing"""
-        return True
+        return self.get_feedback(orig_guess, new_guess) == feedback
 
 
 class WordDB:
