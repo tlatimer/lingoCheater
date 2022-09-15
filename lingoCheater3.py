@@ -35,13 +35,14 @@ class WordCompare:
 
     def apply_feedback(self, guess, feedback):
         for poss in self.poss:
-            if not self.is_possible(guess, feedback, poss):
+            is_possible = self.get_feedback(guess, poss) == feedback
+            if not is_possible:
                 self.poss.remove(poss)
 
         assert len(self.poss) > 0  # this was the issue with the old version
 
-    def is_possible(self, orig_guess, feedback, new_guess):
-        return self.get_feedback(orig_guess, new_guess) == feedback
+    # def is_possible(self, orig_guess, feedback, new_guess):
+    #     return self.get_feedback(orig_guess, new_guess) == feedback
 
 
 class WordDB:
